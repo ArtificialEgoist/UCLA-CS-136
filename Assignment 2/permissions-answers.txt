@@ -1,0 +1,55 @@
+Permissions Answers
+
+1. No Questions to answer here.
+
+2. The Ballot Box
+
+Question: Is there any way that employees can read the ballots of
+other users? If so, what could be done to stop this?
+>> Yes, employees can unfortunately read other users' ballots if they know the name of the files. We blocked directory-level read access, which prevents listing but not execution (perhaps cat). To prevent this completely, the ballots themselves must be unreadable/unexecutable on a file-level. 
+
+Question: What does the 'x' bit mean when applied to directories?
+>> An 'x' (or execute) bit on a directory means the recipient of that permission can traverse (cd) into that folder. 
+
+3. The TPS Reports Directory
+
+Question: Which users on the system can delete arbitrary files
+in the /tpsreports directory?
+>> Only tps, as the owner of the directory, and wheel members can delete or otherwise modify files in /tpsreports. However, with the sticky bit enabled, wheel members shouldn't be able to (arbitrarily) delete other wheel members' files, either.
+
+Question: Is there any way that non-wheel employees can read
+files in the /tpsreports directory? If not, why?
+>> Apart from tps, the owner, no non-wheel employees can read files in /tpsreports. As a matter of fact, these other users have absolutely no access to the directory.
+
+Question: What do '0' permissions mean for the owner of a directory?
+What privileges do they have over files in that directory?
+>> A '0' permission for the owner of a directory obviously means the specified owner has absolutely no access to the directory. Although an unusual situation, this can be useful in various circumstances. For example, the owner of the directory can later be changed, and the directory can contain information (perhaps like an ID tag or even criminal records) in order to describe the new file owner without their knowledge.
+
+4. sudo: Editing Configuration Files
+
+Question: Is this safe? Why or why not? If it is not safe, is there a
+better way to give larry this access? If it is safe, how do you know
+it is safe?
+>> This directive is not safe. The ALL clause means "vim httpd.conf" can be run from any host/IP by "larry," so larry (or the system administrators) will have to closely monitor larry's account and group. Furthermore, according to man visudo, there exists a security hole in which sudoers can modify VISUAL or EDITOR environment variables in order to execute ANY program. Nevertheless, since larry is not a privileged user, there does not seem to be any better alternatives to grant him access to httpd.conf.
+
+5. sudo: Restarting System Processes
+
+Question: If this is possible, how would you grant larry access to
+restart Apache? If it is not possible to grant this permission
+securely, explain why.
+>> Assuming the sudoers file is secure (for example, the issue mentioned above), giving larry sudo access to httpd restart by adding an entry to the /etc/sudoers file should be reasonably safe. He can only run that specific command, so unless his account or password is compromised, nothing too malicious can occur. (As a matter of fact, a Google search shows that many Linux administrators still recommend this method. In addition, a password is necessary for each restart and sudo commands are recorded by the system for security purposes if anything undesirable does occur.) 
+
+6. POSIX and sudo: Two Wrongs Make a Much Bigger Wrong
+
+Question: Is there some way that moe or curly could subvert this
+system to gain root privileges? If not, why?
+>> Yes, there is a way moe or curly could gain root access. As the hint suggests, subversive actions could be taken between the time the password is entered and the moment when shell interaction is made available. Since the shell itself is generated using /etc/passwd details, perhaps the user could modify their entry to run a shell with different permissions (they can also change their home folder). Later, /etc/profile is also processed to log in the user. At these key moments, the user could use these /etc/* files to modify environment variables, which in turn can contain code to change (usermod) moe or curly into the wheel/root group or execute malicious code.
+
+7. Firewall
+
+The submission script will make a copy of your firewall and include it
+in the tarball.
+
+8. Estimated hours: Please enter your estimated total hours spent on
+this Lab 1.
+>> This lab took 10-15 hours (including problems caused by Deterlab).

@@ -1,0 +1,18 @@
+Memo: Buffer Overflow (Part 1)
+
+1.) The security flaw was located in the get_header() method in webserver.c, where after reading a specific header (i.e. "Content-Length") in an HTTP POST request, the software tries to copy the entire following header value into a fixed-size buffer of length 1024. An attacker could put a very long string of data (where length>1024) to crash the software. I actually found the flaw by searching for functions known to be vulnerable to buffer overflows, such as strcpy, memcpy, get, etc. Then I spotted a memcpy operation into the hdrval[1024] array. I traced through the program and found how main() calls pthread_create(), which then calls data_thread(), which then calls send_response() and get_header(). To fix the issue, I simply added a bound-check on the content of the header; if length exceeds the buffer's size of 1024, I truncate the extra data before using memcpy. This is acceptable, since the "Content-Length" header should have very short values under normal circumstances. (Notice that strncpy with an extra length parameter can also replace strcpy for better safety, but that isn't necessary here.) My exploit executes into the fhttpd server folder, starts the web server, then uses netcat to send an HTTP POST request with a very long Content-Length header, immediately causing a stack smash. After applying the patch, however, our program is no longer vulnerable to this stack smashing attack.
+
+2.1) This breach is clearly very serious. Although our exploit simply crashed the program, real attackers could tweak their payload file to overwrite the return address in memory past the buffer, and so run malicious code with sudo/root permissions he or she should should not have (if the server is running as sudo). Even after this nefarious attack, the web server could return gracefully back to the intended function. In this case, nothing would seem out of the ordinary, but in fact the attacker can literally run code with access to the entire system.
+
+2.2) The patch should be sufficient in preventing future buffer overflow attacks. However, if previously exploited, we still won't know what kind of malicious code was run with unprecedented access. Certain users could have been given sudo access, password files could have been stolen and leaked, dormant malware could have been stored, etc. The best bet would be to reset the entire system to an untouched or default state and reset any sensitive info, then make sure to apply the patch to the server. The prompt sums it up well - "the intruder had full control of the server" - and therefore the risks should be taken seriously.
+
+2.3) The payload's fileformat has been set to DOS, such that it uses CLRF. This is necessary for netcat to send to HTTP. If the file loses its formatting, please change its fileformat again or try using telnet rather than netcat. 
+
+To run the demo:
+-Make sure payload1 is found with path /root/payload1
+-Run exploit1.sh in /root
+
+To patch the server:
+-Place fixed.patch into /usr/src/fhttpd/server
+-Run sudo su - if necessary (and execute back into directory)
+-Run the patch < fixed.patch command

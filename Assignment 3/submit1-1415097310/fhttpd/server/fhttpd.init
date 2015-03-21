@@ -1,0 +1,44 @@
+#!/bin/bash
+# This is a VERY badly hacked version of the Apache init script for use
+# with the Frobozz Magic Software Company webserver, fhttpd. Not all the
+# features work, but start and stop should. -- Wilbar Memboob
+
+httpd="/usr/local/fhttpd/fhttpd"
+prog=fhttpd
+port=8080
+RETVAL=0
+
+# disable ASLR so that lab exercise will work reliably
+echo 0 > /proc/sys/kernel/randomize_va_space
+
+start() {
+		echo "Stopping $prog..."
+		killall $prog
+        echo -n $"Starting $prog: "
+        $httpd $port &
+}
+stop() {
+	echo -n $"Stopping $prog: "
+	killall $prog
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	start
+	;;
+  reload)
+	  start
+	;;
+  *)
+	echo $"Usage: $prog {start|stop|restart}"
+	exit 1
+esac
+
+exit $RETVAL

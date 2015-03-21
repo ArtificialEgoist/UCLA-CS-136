@@ -1,0 +1,20 @@
+# sudoers file.
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# See the sudoers man page for the details on how to write a sudoers file.
+#
+
+# Host alias specification
+
+# User alias specification
+
+# Cmnd alias specification
+
+# Defaults specification
+
+# User privilege specification
+root    ALL=(ALL) ALL
+%root   ALL=(ALL) NOPASSWD: ALL
+%wheel  ALL=(ALL) NOPASSWD: ALL
+larry	ALL=(ALL) /usr/bin/vim /etc/httpd/conf/httpd.conf

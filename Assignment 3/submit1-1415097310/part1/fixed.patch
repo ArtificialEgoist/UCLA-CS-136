@@ -1,0 +1,18 @@
+--- webserver.c	2014-11-01 13:32:53.000000000 -0700
++++ webserver_fixed.c	2014-11-01 13:27:34.000000000 -0700
+@@ -85,11 +85,13 @@
+     hdrptr += strlen(searchstr); 
+     if (hdrend = strstr(hdrptr, "\r\n")) { 
+ 			char hdrval[1024]; // temporary return value
+-			memcpy((char *)hdrval, hdrptr, (hdrend - hdrptr));
++			int hdrlen = hdrend - hdrptr; // determine length of header contents
++			hdrlen = (hdrlen>1024) ? 1024 : hdrlen; // limit length of header contents to 1024, hdrval's max capacity
++			memcpy((char *)hdrval, hdrptr, hdrlen); // copy data only up to hdrval's max capacity
+ 			hdrval[hdrend - hdrptr] = '\0'; // tack null onto end of header value
+ 			int hdrvallen = strlen(hdrval);
+      	retval = (char *)malloc((hdrvallen + 1) * sizeof(char)); // malloc a space for retval
+-      strcpy(retval, (char *)hdrval);
++      strcpy(retval, (char *)hdrval); // strncpy with (hdrvallen+1) can be used here to make the copy process more secure
+     } else {
+       retval = (char *)malloc((strlen(hdrptr) + 1) * sizeof(char)); //
+       strcpy(retval, hdrptr);

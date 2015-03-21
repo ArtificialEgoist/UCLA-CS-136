@@ -1,0 +1,24 @@
+--- memo.cgi	2014-11-02 16:58:09.000000000 -0800
++++ memo_fixed.cgi	2014-11-02 19:34:15.000000000 -0800
+@@ -26,8 +26,7 @@
+ 
+ # glob through the homedirs for an array of paths to memos sorted by date
+ sub list_memo_selector {
+-	my @memos = </home/*/memo/*>; # all regular users
+-	push (@memos, </root/memo/*>); # special memos from root
++	my @memos = </home/memo-users/memo/*>; # all memos are in this directory; show these on site
+ 	foreach (@memos) {
+ 		$_ =~ m#^.+/([^/]+)$#; # regex extract filename
+ 		my $temp = $1;
+@@ -56,6 +55,11 @@
+ } else { # there is a memo selected
+ 	list_memo_selector();
+ 	my $memo = param('memo');
++
++	if($memo !~ m#^\/home\/memo-users\/memo\/.*$#) {
++		$memo = ""; # if memo does not start with "/home/memo-users/memo/", set memo to nothing
++	}
++	$memo =~ s/\.\.\///g; # globally remove all "../" matches to prevent executing other level directories
+ 	my $author = "root";
+ 	my @stat = stat $memo;
+ 	my $date = localtime $stat[9];

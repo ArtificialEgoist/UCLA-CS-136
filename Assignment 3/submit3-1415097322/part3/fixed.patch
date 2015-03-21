@@ -1,0 +1,177 @@
+--- FCCU.php	2014-11-04 00:31:08.000000000 -0800
++++ FCCU_fixed.php	2014-11-04 00:59:29.000000000 -0800
+@@ -31,10 +31,24 @@
+ 	$id = $PARAM['id'];
+ 	$password = $PARAM['password'];
+ 
++	$id_not_numeric = false;
++	if(!is_numeric($id)) {
++		echo "Warning: ID must be numeric! Please try again.\n";
++		$id_not_numeric = true;
++	}
++
++        $id = mysql_real_escape_string($id);
++        $password = mysql_real_escape_string($password);
++
+ 	$link_id = mysql_connect($dbhost, $dbuser, $dbpass);
+ 	mysql_select_db($dbname);
+-	
++
+ 	$query = "SELECT * FROM accounts WHERE id = $id AND password = '$password'";
++
++	if($id_not_numeric) {
++		$query = "";
++	}
++
+ 	debug($query);
+ 	$result = mysql_query($query) or die(mysql_error());
+ 	$row = mysql_fetch_array($result); // there should be only one row
+@@ -52,25 +66,25 @@
+ 		banner($row);
+ 		
+ 		// perform any requested actions (wire, transfer, withdraw)
+-		if ($PARAM['action'] == 'Transfer Money') {
+-			transfer_funds($id, 
+-				       $password,
+-			               $PARAM['transfer_to'], 
+-				       $PARAM['transfer_amount']);
+-		} elseif ($PARAM['action'] == 'Wire Money') {
+-			wire_funds($id,
+-			            $password,
+-		                    $PARAM['routing'],
+-			            $PARAM['wire_acct'],
+-			            $PARAM['wire_amount']);
+-		} elseif ($PARAM['action'] == 'Withdraw Money') {
+-			withdraw_cash($id,
+-			              $password,
+-		                      $PARAM['withdraw_amount']);
+-		}
+-
+-		// normal output
++                if ($PARAM['action'] == 'Transfer Money') {
++                        transfer_funds($id,
++                                       $password,
++                                       mysql_real_escape_string($PARAM['transfer_to']),
++                                       mysql_real_escape_string($PARAM['transfer_amount']));
++                } elseif ($PARAM['action'] == 'Wire Money') {
++                        wire_funds($id,
++                                    $password,
++                                    mysql_real_escape_string($PARAM['routing']),
++                                    mysql_real_escape_string($PARAM['wire_acct']),
++                                    mysql_real_escape_string($PARAM['wire_amount']));
++                } elseif ($PARAM['action'] == 'Withdraw Money') {
++                        withdraw_cash($id,
++                                      $password,
++                                      mysql_real_escape_string($PARAM['withdraw_amount']));
++                }
+ 		
++		// normal output
++
+ 		// account info
+ 		$query = "SELECT * FROM accounts WHERE id = $id AND password = '$password'";
+ 		$result = mysql_query($query) or die(mysql_error());
+@@ -120,6 +134,12 @@
+ function withdraw_cash($id, $password, $amount) {
+ 
+ 	global $dbhost, $dbuser, $dbpass, $dbname;
++
++	$amount_not_numeric = false;
++	if(!is_numeric($amount)) {
++		echo "Warning: amount must be numeric! Please try again.\n";
++		$amount_not_numeric = true;
++	}
+ 	
+ 	$amount = floor($amount);
+ 	
+@@ -137,6 +157,11 @@
+ 		$giver_has = $giver_has - $amount; // there's a problem here but it's not SQL Injection...
+ 		pretend("withdraw cash", $amount);
+ 		$query = "UPDATE accounts SET bal = $giver_has WHERE password = '$password' AND id = $id LIMIT 1";
++
++		if($amount_not_numeric) {
++			$query = "";
++		}
++
+ 		mysql_query($query) or die(mysql_error());
+ 		echo "<h2 align='center'>Cash withdrawal of $$amount complete.</h2>
+ 		      <h3 align='center'>Your cash should be ready in accounting within 45 minutes.</h3>\n";
+@@ -152,11 +177,22 @@
+ 	global $dbhost, $dbuser, $dbpass, $dbname;
+ 	
+ 	$amount = floor($amount);
++
++	$bank_account_amount_not_numeric = false;
++	if(!is_numeric($bank) || !is_numeric($account) || !is_numeric($amount)) {
++		echo "Warning: bank, account, and amount must all be numeric! Please try again.\n";
++		$bank_account_amount_not_numeric = true;
++	}
+ 	
+ 	$link_id = mysql_connect($dbhost, $dbuser, $dbpass);
+ 	mysql_select_db($dbname);
+ 	
+ 	$query = "SELECT bal FROM accounts WHERE password = '$password' AND id = $id";
++
++	if($bank_account_amount_not_numeric) {
++		$query = "";
++	}
++
+ 	debug($query);
+ 	$result = mysql_query($query);
+ 	
+@@ -167,6 +203,11 @@
+ 		$giver_has = $giver_has - $amount; // there's a problem here but it's not SQL Injection...
+ 		pretend("wire money", $amount, $bank, $acct);
+ 		$query = "UPDATE accounts SET bal = $giver_has WHERE password = '$password' AND id = $id LIMIT 1";
++
++		if($bank_account_amount_not_numeric) {
++			$query = "";
++		}
++
+ 		debug($query);
+ 		mysql_query($query) or die(mysql_error());
+ 		echo "<h2 align='center'>Wire of $$amount to bank ($bank) account ($account) complete.</h2>\n";
+@@ -184,6 +225,12 @@
+ function transfer_funds($giver_id, $password, $recipient, $amount) {
+ 
+ 	global $dbhost, $dbuser, $dbpass, $dbname;
++
++        $amount_not_numeric = false;
++        if(!is_numeric($amount)) {
++                echo "Warning: amount must be numeric! Please try again.\n";
++                $amount_not_numeric = true;
++        }
+ 	
+ 	$amount = floor($amount);
+ 	$recipient_id = name_to_id($recipient);
+@@ -192,6 +239,11 @@
+ 	mysql_select_db($dbname);
+ 	
+ 	$query = "SELECT bal FROM accounts WHERE id = $giver_id OR id = $recipient_id";
++
++        if($amount_not_numeric) {
++                $query = "";
++        }
++
+ 	debug($query);
+ 	$result = mysql_query($query);
+ 	
+@@ -205,9 +257,19 @@
+ 		$giver_has = $giver_has - $amount; // there's a problem here but it's not SQL Injection...
+ 		$recipient_has = $recipient_has + $amount; // does anyone know what it is?
+ 		$query = "UPDATE accounts SET bal = $recipient_has WHERE id = $recipient_id LIMIT 1";
++
++		if($amount_not_numeric) {
++			$query = "";
++		}
++
+ 		debug($query);
+ 		mysql_query($query) or die(mysql_error());
+ 		$query = "UPDATE accounts SET bal = $giver_has WHERE password = '$password' AND id = $giver_id LIMIT 1";
++
++		if($amount_not_numeric) {
++			$query = "";
++		}
++
+ 		debug($query);
+ 		mysql_query($query) or die(mysql_error());
+ 		echo "<h2 align='center'>Transfer of $$amount to $recipient complete.</h2>\n";
